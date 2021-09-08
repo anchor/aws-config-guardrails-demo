@@ -1,0 +1,150 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: This template deploys a bad architecture
+
+# Deployment:
+# aws cloudformation create-stack --stack-name bad-architecture-infra --template-body file://bad-architecture-infra.yml --capabilities CAPABILITY_NAMED_IAM
+
+# aws cloudformation update-stack --stack-name bad-architecture-infra --template-body file://bad-architecture-infra.yml --capabilities CAPABILITY_NAMED_IAM
+
+# aws cloudformation delete-stack --stack-name bad-architecture-infra
+
+
+Parameters:
+  Environment:
+    Description: The type of environment (i.e, prod) used for naming and tagging.
+    Type: String
+    Default: demo 
+
+  VpcCidr: 
+    Description: The IP range (Cidr notation) for this VPC
+    Type: String
+    Default: '172.31.255.255/26'
+
+  PublicSn1Cidr:
+    Description: The IP range (Cidr notation) for the public subnet in the first Availability Zone
+    Type: String
+    Default: '172.31.255.192/28'
+
+
+Resources:
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub vpc-${Environment}
+        - Key: Env
+          Value: !Sub ${Environment}
+  Igw:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub ig-${Environment}
+        - Key: Env
+          Value: !Sub ${Environment}
+
+  IgwAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref Igw
+      VpcId: !Ref Vpc
+
+  PublicSn1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: !Ref PublicSn1Cidr
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub subnet-${Environment}-public-1
+        - Key: Env
+          Value: !Sub ${Environment}
+
+  PublicRt:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub rt-${Environment}-public
+        - Key: Env
+          Value: !Sub ${Environment}
+
+  DefaultPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: IgwAttachment
+    Properties:
+      RouteTableId: !Ref PublicRt
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref Igw
+
+  AssociatePublicRtToPublicSn1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRt
+      SubnetId: !Ref PublicSn1
+
+  Ec2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties: 
+      InstanceProfileName: Ec2InstanceProfile
+      Roles: 
+        - !Ref Ec2Role
+
+
+  Ec2Role:
+    Type: AWS::IAM::Role
+    Properties: 
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Description: Ec2 Service Role
+      RoleName: !Sub ${Environment}Ec2Role
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - arn:aws:iam::aws:policy/AmazonSSMFullAccess
+
+
+Outputs:
+  VPC:
+    Description: A reference to the created VPC
+    Value: !Ref Vpc
+    Export:
+      Name: !Sub '${AWS::StackName}-Vpc'
+
+  DefaultPublicRoute:
+    Description: A reference to the created VPC
+    Value: !Ref DefaultPublicRoute
+    Export:
+      Name: !Sub '${AWS::StackName}-DefaultPublicRoute'
+
+  PublicSn1:
+    Description: A reference to the public subnet in the 1st Availability Zone
+    Value: !Ref PublicSn1
+    Export:
+      Name: !Sub ${AWS::StackName}-PublicSn1
+
+  Ec2Role:
+    Description: The IAM role for the EC2 instance in the compute stack
+    Value: !Ref Ec2Role
+    Export:
+      Name: !Sub '${AWS::StackName}-Ec2Role'
+
+
+  Ec2InstanceProfile:
+    Description: The IAM Profile for the EC2 instance in the compute stack
+    Value: !Ref Ec2InstanceProfile
+    Export:
+      Name: !Sub ${AWS::StackName}-Ec2InstanceProfile

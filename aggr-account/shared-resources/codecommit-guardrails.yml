@@ -1,0 +1,38 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Creates a new CodeCommit repository
+
+# Deployment:
+# aws cloudformation create-stack --stack-name codecommit-guardrails --template-body file://codecommit-guardrails.yml 
+
+# UPDATE:
+# aws cloudformation update-stack --stack-name codecommit-guardrails --template-body file://codecommit-guardrails.yml 
+
+Resources:
+  GuardrailsRepo:
+    Type: AWS::CodeCommit::Repository
+    DeletionPolicy: Retain
+    Properties : 
+      RepositoryDescription : Source Code repository for the guardrails
+      RepositoryName : guardrails-repo
+
+Outputs:
+  GuardrailsRepo:
+    Value: !Ref GuardrailsRepo
+    Export:
+      Name: !Sub ${AWS::StackName}-GuardrailsRepo
+  GuardrailsRepoArn:
+    Value: !GetAtt GuardrailsRepo.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-GuardrailsRepoArn
+  GuardrailsRepoCloneUrlHttp:
+    Value: !GetAtt GuardrailsRepo.CloneUrlHttp
+    Export:
+      Name: !Sub ${AWS::StackName}-GuardrailsRepoCloneUrlHttp
+  GuardrailsRepoName:
+    Value: !GetAtt GuardrailsRepo.Name
+    Export:
+      Name: !Sub ${AWS::StackName}-GuardrailsRepoName
+  GuardrailsRepoVersion:
+    Value: GuardrailsRepoVersion  
+    Export: 
+      Name: !Sub ${AWS::StackName}-GuardrailsRepoVersion

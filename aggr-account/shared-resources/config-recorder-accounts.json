@@ -1,0 +1,18 @@
+[
+  {
+    "ParameterKey": "AggregatorAccountId",
+    "ParameterValue": ""
+  },
+  {
+    "ParameterKey": "MemberAccountId",
+    "ParameterValue": ""
+  },
+  {
+    "ParameterKey": "AggregationRegion",
+    "ParameterValue": "us-east-2"
+  },
+  {
+    "ParameterKey": "RecordingRegion",
+    "ParameterValue": "us-east-1"
+  }
+]

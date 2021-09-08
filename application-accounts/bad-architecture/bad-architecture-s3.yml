@@ -1,0 +1,29 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Deploy an S3 bucket
+
+# Deployment:
+# aws cloudformation create-stack --stack-name bad-architecture-s3 --template-body file://bad-architecture-s3.yml 
+
+# aws cloudformation update-stack --stack-name bad-architecture-s3 --template-body file://bad-architecture-s3.yml 
+
+# aws cloudformation delete-stack --stack-name bad-architecture-s3
+
+
+Resources:
+  S3BucketVeryOpen:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Sub "open-bucket-${AWS::AccountId}-${AWS::Region}"
+      AccessControl: PublicRead
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+
+
+Outputs:
+  S3BucketVeryOpen:                     
+    Value: !Ref S3BucketVeryOpen
+    Export:
+      Name: !Sub ${AWS::StackName}-S3BucketVeryOpen

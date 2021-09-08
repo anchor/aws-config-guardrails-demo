@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: configuration for the aggregator
+
+# Deployment:
+# aws cloudformation create-stack --stack-name configuration-aggregator --template-body file://configuration-aggregator.yml 
+
+# UPDATE:
+# aws cloudformation update-stack --stack-name configuration-aggregator --template-body file://configuration-aggregator.yml 
+
+# DELETE
+# aws cloudformation delete-stack --stack-name configuration-aggregator
+
+Parameters:
+  AggregationRegion:
+    Description: region of the aggregator
+    Type: String
+  RecordingRegion:
+    Description: region that is also recorded
+    Type: String
+  AggregatorAccountId:
+    Description: account id of the aggregator account
+    Type: String
+  MemberAccountId:
+    Description: account id of the member account
+    Type: String
+
+Resources:
+  ConfigurationAggregator:
+    Type: 'AWS::Config::ConfigurationAggregator'
+    Properties:
+      AccountAggregationSources:
+        - AccountIds:
+            - !Ref AggregatorAccountId
+            - !Ref MemberAccountId
+          AwsRegions:
+            - !Ref AggregationRegion
+            - !Ref RecordingRegion
+          AllAwsRegions: false
+      ConfigurationAggregatorName: MyConfigurationAggregator
+
+Outputs:
+  ConfigurationAggregator:
+    Description: Config for Aggregator
+    Value: !Ref ConfigurationAggregator
+    Export: 
+      Name: !Sub ${AWS::StackName}-ConfigurationAggregator

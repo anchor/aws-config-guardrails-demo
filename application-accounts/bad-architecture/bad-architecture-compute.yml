@@ -1,0 +1,105 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: This template deploys an extremely bad architected EC2 instance
+
+# Deployment:
+# aws cloudformation create-stack --stack-name bad-architecture-compute --template-body file://bad-architecture-compute.yml 
+
+# aws cloudformation update-stack --stack-name bad-architecture-compute --template-body file://bad-architecture-compute.yml 
+
+# aws cloudformation delete-stack --stack-name bad-architecture-compute
+
+
+Parameters:
+  Environment:
+    Description: The type of environment (i.e, prod) used for naming and tagging.
+    Type: String
+    Default: demo 
+  AmiId:
+    Description: The AMI for the instance
+    Type: AWS::EC2::Image::Id
+    Default: "ami-00dfe2c7ce89a450b" 
+  Workload:
+    Description: The workload e.g. (Frontend, Backend, App)
+    Type: String
+    Default: Frontend
+  InstanceType:
+    Description: Please enter the instance type for the bastion
+    Type: String
+    Default: t2.micro
+  InfraStackName:
+    Description: Name of the infrastructure stack
+    Type: String
+    Default: "bad-architecture-infra"
+  SubnetName:
+    Description: subnet for ec2 deployment 
+    Type: String
+    Default: PublicSn1
+
+Resources:
+  Ec2LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties: 
+      LaunchTemplateName: !Sub ${Environment}${Workload}Ec2Lt
+      LaunchTemplateData: 
+        ImageId: !Ref AmiId
+        IamInstanceProfile: 
+          Name:
+            Fn::ImportValue: !Sub "${InfraStackName}-Ec2InstanceProfile"
+        DisableApiTermination: false
+        InstanceType: !Ref InstanceType
+        Monitoring:
+          Enabled: true
+        SecurityGroupIds:
+          - !Ref Ec2SecurityGroup
+        TagSpecifications:
+        - ResourceType: instance
+          Tags:
+          - Key: "Name"
+            Value: "Demo bad guy"
+        BlockDeviceMappings:
+        - DeviceName: "/dev/sdm"
+          Ebs: 
+            VolumeType: "gp2"
+            DeleteOnTermination: true
+            VolumeSize: 30
+
+  AppSvr01Instance:
+    Type: AWS::EC2::Instance
+    Properties: 
+      LaunchTemplate:
+        LaunchTemplateId: !Ref Ec2LaunchTemplate
+        Version: "1"
+      SubnetId: 
+        Fn::ImportValue: !Sub "${InfraStackName}-${SubnetName}"
+
+  Ec2SecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+        GroupDescription: "Security group for EC2"
+        GroupName: 
+          !Sub "${Environment}${Workload}SgEc2"
+        Tags: 
+          - Key: "Env"
+            Value: !Ref Environment
+          - Key: "Role"
+            Value: "Compute"
+        VpcId:
+          Fn::ImportValue:
+           !Sub "${InfraStackName}-Vpc"
+        SecurityGroupIngress: 
+          - IpProtocol: "tcp"
+            FromPort: 80
+            ToPort: 80
+            CidrIp: 0.0.0.0/0
+        SecurityGroupEgress: 
+          - IpProtocol: "tcp"
+            FromPort: 0
+            ToPort: 65535
+            CidrIp: 0.0.0.0/0
+
+Outputs:
+  Ec2LaunchTemplate:
+    Description: A reference to the created VPC
+    Value: !Ref Ec2LaunchTemplate
+    Export:
+      Name: !Sub '${Environment}Ec2LaunchTemplate'

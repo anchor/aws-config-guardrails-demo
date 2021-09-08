@@ -1,0 +1,102 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Deploy a Config rule
+# Deployment - STACK SET:
+# aws cloudformation create-stack-set --stack-set-name config-rule-ec2 --template-body file://config-rule-ec2.yml --capabilities CAPABILITY_NAMED_IAM --permission-model SELF_MANAGED 
+
+# aws cloudformation update-stack-set --stack-set-name config-rule-ec2 --template-body file://config-rule-ec2.yml --capabilities CAPABILITY_NAMED_IAM --permission-model SELF_MANAGED 
+
+# aws cloudformation delete-stack-set --stack-set-name config-rule-ec2
+
+# -------------
+# STACK SET INSTANCE:
+# aws cloudformation create-stack-instances --stack-set-name config-rule-ec2 --deployment-targets Accounts="account1,account2" --regions "us-east-2" "us-east-1" --operation-preferences FailureToleranceCount=10
+
+# UPDATE
+# aws cloudformation update-stack-instances --stack-set-name config-rule-ec2 --deployment-targets Accounts="account1,account2" --regions "us-east-2" "us-east-1" --operation-preferences FailureToleranceCount=2
+
+# DELETE
+# aws cloudformation delete-stack-instances --stack-set-name config-rule-ec2 --deployment-targets Accounts="account1,account2" --regions us-east-2 us-east-1 --operation-preferences FailureToleranceCount=1 --no-retain-stacks
+
+
+Parameters:
+  AllowedAmi:
+    Description: Environment type
+    Type: String
+    Default: "ami-031dea1a744251b51"
+
+Resources:
+  Ec2ApprovedAmiRule:
+    Type: AWS::Config::ConfigRule
+    Properties: 
+      ConfigRuleName: Ec2ApprovedAmiRule
+      Description: Validates if only approved AMIs are being used
+      InputParameters: !Sub '{ "amiIds" : "${AllowedAmi}" }'
+      Scope:
+        ComplianceResourceTypes:
+          - "AWS::EC2::Instance"
+      Source: 
+        Owner: AWS
+        SourceIdentifier: APPROVED_AMIS_BY_ID
+
+  ConfigRuleForEc2Tags: 
+    Type: AWS::Config::ConfigRule
+    Properties: 
+      ConfigRuleName: ConfigRuleForEc2Tags
+      InputParameters: 
+        tag1Key: CostCenter
+      Scope: 
+        ComplianceResourceTypes: 
+          - "AWS::EC2::Instance"
+          - "AWS::EC2::Volume"
+          - "AWS::EC2::EIP"
+      Source: 
+        Owner: AWS
+        SourceIdentifier: "REQUIRED_TAGS"
+
+  Ec2ApprovedAmiRemediation:  
+    Type: AWS::Config::RemediationConfiguration
+    Properties: 
+      Automatic: true
+      ConfigRuleName: !Ref Ec2ApprovedAmiRule
+      Parameters:
+        AutomationAssumeRole:
+          StaticValue:
+            Values: 
+              - !GetAtt AutoRemediationIamRole.Arn
+        InstanceId:
+          ResourceValue:
+            Value: "RESOURCE_ID"
+      MaximumAutomaticAttempts: 10   
+      ResourceType: "AWS::EC2::Instance"
+      RetryAttemptSeconds: 60
+      TargetId: "AWS-StopEC2Instance"
+      TargetType: "SSM_DOCUMENT"
+
+  AutoRemediationIamRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "ec2.amazonaws.com"
+                - "events.amazonaws.com"
+                - "ssm.amazonaws.com"
+                - "config.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AmazonSSMAutomationRole"
+        - "arn:aws:iam::aws:policy/AmazonEC2FullAccess"
+
+Outputs:
+  Ec2ApprovedAmiRule:
+    Value: !Ref Ec2ApprovedAmiRule
+    Export: 
+      Name: !Sub ${AWS::StackName}-Ec2ApprovedAmiRule
+  ConfigRuleForEc2Tags:
+    Value: !Ref ConfigRuleForEc2Tags
+    Export: 
+      Name: !Sub ${AWS::StackName}-ConfigRuleForEc2Tags
