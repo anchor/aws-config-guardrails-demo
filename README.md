@@ -1,4 +1,7 @@
-# Callouts for workshop
+# Establishing guardrails with AWS Config across AWS Accounts
+
+
+## Callouts for workshop
 
 1. Source code repository (https://github.com/anchor/aws-config-guardrails-demo)
 2. If you run this demo in an AWS Organization you have to enable all features in the Organization and also CloudFormation delegation
@@ -15,7 +18,7 @@
 13. Conformance Packs need to be rolled out to each individual account when not within an organisation
 
 
-# Agenda for the workshop
+## Agenda for the workshop
 
 1. Intro - both
 2. Presenter 1:
@@ -39,7 +42,7 @@
    3. Cleanup
 
 
-# Helpful URLs
+## Helpful URLs
 
 1. Config pricing (https://aws.amazon.com/config/pricing/)
 2. Config overview (https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/AWS_Config.html)
@@ -50,7 +53,7 @@
 7. Remediations (https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-config-remediationconfiguration.html)
 
 
-# Setup steps
+## Setup steps
 
 The setup script assume that use use Linux or Mac. If you use a different OS you can lookup the CloudFormation deployment statements in each template
 1. Update the scripts with your AWS account IDs and AWS Regions of choice:
@@ -72,7 +75,7 @@ The setup script assume that use use Linux or Mac. If you use a different OS you
    1. aws cloudformation create-stack --stack-name bad-architecture-compute --template-body file://bad-architecture-compute.yml 
 
 
-# Cleanup steps
+## Cleanup steps
 
 1. Member account: clear objects in the S3 buckets: scripts/delete-s3-buckets-member-account.sh
 2. Aggregation account scripts/destroy-aggr.sh - then wait until the stack set instances are deleted
@@ -85,13 +88,15 @@ The setup script assume that use use Linux or Mac. If you use a different OS you
    b. aws cloudformation delete-stack --stack-name iam-stackset-exec-role
 
 
-# Cleanup Validations
+## Cleanup Validations
 
 1. Make sure all created buckets are deleted in both accounts
 2. Make sure both CloudFormation Stack Sets are deleted in the aggregator account
 3. Make sure all CloudFormation Stacks are deleted in both accounts
 
 
-# Presenters LinkedIn Pages
+## Presenters LinkedIn Pages
+
 [Gerald Bachlmayr](https://www.linkedin.com/in/bachlmayr/)
+
 [Anthony Spruce](https://www.linkedin.com/in/anthony-spruce-59327a43/)
