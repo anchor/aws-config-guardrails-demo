@@ -92,7 +92,6 @@ The setup script assume that use use Linux or Mac. If you use a different OS you
 3. Make sure all CloudFormation Stacks are deleted in both accounts
 
 
-# LinkedIn:
-
-[Gerald Bachlmayr] (https://www.linkedin.com/in/bachlmayr/)
-[Anthony Spruce] (https://www.linkedin.com/in/anthony-spruce-59327a43/)
+# Presenters LinkedIn Pages
+[Gerald Bachlmayr](https://www.linkedin.com/in/bachlmayr/)
+[Anthony Spruce](https://www.linkedin.com/in/anthony-spruce-59327a43/)
